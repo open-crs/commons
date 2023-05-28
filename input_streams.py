@@ -1,3 +1,5 @@
+"""Module for defining the input streams that can be used by a binary."""
+
 from enum import Enum, auto
 
 

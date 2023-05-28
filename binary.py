@@ -1,20 +1,14 @@
+"""Module for statically analyzing binaries."""
+
 import logging
 import typing
 from enum import Enum, auto
 
 from pwn import ELF
 
+from commons.mitigations import Mitigations
+
 SENSITIVE_STRINGS = ["win", "secret", "shell", "system", "flag"]
-
-
-class Mitigation(Enum):
-    ASLR = auto()
-    NX = auto()
-    CANARY = auto()
-    RELRO = auto()
-    PIE = auto()
-    FORTIFY = auto()
-    ASAN = auto()
 
 
 class ContextAspects(Enum):
@@ -22,8 +16,8 @@ class ContextAspects(Enum):
     RWX_SEGMENTS = auto()
 
 
-def get_mitigations(binary: ELF) -> list(Mitigation):
-    yield from __get_members_from_loaded_elf(binary, Mitigation)
+def get_mitigations(binary: ELF) -> list(Mitigations):
+    yield from __get_members_from_loaded_elf(binary, Mitigations)
 
 
 def get_context_aspects(binary: ELF) -> list(ContextAspects):

@@ -1,3 +1,5 @@
+"""Module for defining the weaknesses that a binary may have."""
+
 from enum import Enum, auto
 
 

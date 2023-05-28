@@ -1,4 +1,6 @@
-from enum import Enum, auto
+"""Module for defining the outcomes that an attack may have."""
+
+from enum import Enum
 
 
 class Outcome(Enum):

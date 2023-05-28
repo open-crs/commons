@@ -1,21 +1,17 @@
+"""Module for creating and working with processes."""
+
 import logging
 import os
 import tempfile
 import typing
 from dataclasses import dataclass
-from enum import Enum, auto
 
 import pwn
 
-from automatic_exploit_generation.exceptions import ExploitingException
+from commons.exceptions import CommonException
+from commons.input_streams import InputStreams
 
 ProcessInput = typing.Union[bytes, typing.List[bytes]]
-
-
-class InputStream(Enum):
-    FILES = auto()
-    STDIN = auto()
-    ARGUMENTS = auto()
 
 
 @dataclass
@@ -23,19 +19,17 @@ class Process:
     path: str = None
     process: pwn.process = None
     pid: int = None
-    input_stream: InputStream = None
+    input_stream: InputStreams = None
     sent_input: ProcessInput = None
     output: bytes = None
 
 
 def create_process(
     path: str,
-    input_stream: InputStream,
+    input_stream: InputStreams,
     sent_input: ProcessInput,
 ) -> Process:
-    process = Process(
-        path=path, input_stream=input_stream, sent_input=sent_input
-    )
+    process = Process(path=path, input_stream=input_stream, sent_input=sent_input)
 
     return process
 
@@ -50,16 +44,16 @@ def execute_process(process: Process) -> None:
 
 
 def create_process_depending_on_input_stream(process: Process) -> pwn.process:
-    if process.input_stream == InputStream.FILES:
+    if process.input_stream == InputStreams.FILES:
         file = tempfile.NamedTemporaryFile("wb", delete=False)
         file.write(process.sent_input)
         file.flush()
         file.close()
 
         process = create_process_with_file_as_argument(process, file.name)
-    elif process.input_stream == InputStream.STDIN:
+    elif process.input_stream == InputStreams.STANDARD_INPUT:
         process = create_process_with_stdin(process)
-    elif process.input_stream == InputStream.ARGUMENTS:
+    elif process.input_stream == InputStreams.ARGUMENTS:
         process = create_process_with_arguments(process)
 
     return process
@@ -115,10 +109,9 @@ def get_core(process: Process) -> pwn.Coredump:
     return core
 
 
-class CoreNotGeneratedException(ExploitingException):
+class CoreNotGeneratedException(CommonException):
     """The core was not generated."""
 
 
-class InvalidInputType(ExploitingException):
-    """The provided initial input does not match the one requird by the sream.
-    """
+class InvalidInputType(CommonException):
+    """The provided initial input does not match the one requird by the sream."""
