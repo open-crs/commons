@@ -35,17 +35,16 @@ def __get_members_from_loaded_elf(
             yield members_enum[member_name]
 
 
-def get_sensitive_functions_addresses(
-    binary: ELF,
-) -> typing.Generator[int, None, None]:
-    funcs = {
-        name: address
-        for name, address in binary.symbols.items()
-        if __is_sensitive(name)
-    }
+def get_sensitive_functions_names(
+    elf_filename: str,
+) -> typing.Generator[str, None, None]:
+    binary = ELF(elf_filename)
+    funcs = [name for name in binary.symbols.keys() if __is_sensitive(name)]
 
-    for name, address in funcs.items():
-        logging.info("Found sensitive function: %s (%s)", name, hex(address))
+    for name in funcs.items():
+        logging.info(
+            "Found sensitive function: %s (%s)", name, hex(binary.symbols[name])
+        )
 
     yield from funcs
 

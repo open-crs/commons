@@ -3,7 +3,7 @@
 from enum import Enum
 
 
-class Outcome(Enum):
+class Outcomes(Enum):
     CODE_EXECUTION = 0
     CALL_TO_WIN_FUNCTION = CODE_EXECUTION + 1
     INTERACTIVE_SHELL = CODE_EXECUTION + 2
