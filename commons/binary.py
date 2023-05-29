@@ -4,9 +4,8 @@ import logging
 import typing
 from enum import Enum, auto
 
-from pwn import ELF
-
 from commons.mitigations import Mitigations
+from pwn import ELF
 
 SENSITIVE_STRINGS = ["win", "secret", "shell", "system", "flag"]
 
@@ -16,11 +15,11 @@ class ContextAspects(Enum):
     RWX_SEGMENTS = auto()
 
 
-def get_mitigations(binary: ELF) -> list(Mitigations):
+def get_mitigations(binary: ELF) -> typing.List[Mitigations]:
     yield from __get_members_from_loaded_elf(binary, Mitigations)
 
 
-def get_context_aspects(binary: ELF) -> list(ContextAspects):
+def get_context_aspects(binary: ELF) -> typing.List[ContextAspects]:
     yield from __get_members_from_loaded_elf(binary, ContextAspects)
 
 
