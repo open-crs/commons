@@ -4,6 +4,6 @@ from enum import Enum, auto
 
 
 class InputStreams(Enum):
-    STANDARD_INPUT = auto()
+    STDIN = auto()
     ARGUMENTS = auto()
     FILES = auto()

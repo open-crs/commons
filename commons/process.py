@@ -7,7 +7,6 @@ import typing
 from dataclasses import dataclass
 
 import pwn
-
 from commons.exceptions import CommonException
 from commons.input_streams import InputStreams
 
@@ -51,7 +50,7 @@ def create_process_depending_on_input_stream(process: Process) -> pwn.process:
         file.close()
 
         process = create_process_with_file_as_argument(process, file.name)
-    elif process.input_stream == InputStreams.STANDARD_INPUT:
+    elif process.input_stream == InputStreams.STDIN:
         process = create_process_with_stdin(process)
     elif process.input_stream == InputStreams.ARGUMENTS:
         process = create_process_with_arguments(process)
