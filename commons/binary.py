@@ -37,10 +37,10 @@ def __get_members_from_loaded_elf(
 def get_sensitive_functions_names(
     elf_filename: str,
 ) -> typing.Generator[str, None, None]:
-    binary = ELF(elf_filename)
+    binary = ELF(elf_filename, checksec=False)
     funcs = [name for name in binary.symbols.keys() if __is_sensitive(name)]
 
-    for name in funcs.items():
+    for name in funcs:
         logging.info(
             "Found sensitive function: %s (%s)", name, hex(binary.symbols[name])
         )
