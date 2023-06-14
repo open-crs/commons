@@ -12,13 +12,19 @@ class FolderWatcher:
     __thread: Thread
     __stop_needed: bool
     __known_files: typing.List[str]
+    __ignored_files: typing.List[str]
 
     def __init__(
-        self, folder: Path, pooling_interval: int, callback: typing.Callable
+        self,
+        folder: Path,
+        pooling_interval: int,
+        callback: typing.Callable,
+        ignored_files: typing.List[str],
     ) -> None:
         self.__folder = folder
         self.__pooling_interval = pooling_interval
         self.__callback = callback
+        self.__ignored_files = ignored_files
 
         self.__stop_needed = False
         self.__known_files = []
@@ -32,6 +38,7 @@ class FolderWatcher:
     def __watch(self) -> None:
         while not self.__stop_needed:
             files = set(os.listdir(self.__folder))
+            files = files.difference(set(self.__ignored_files))
 
             for new_file in files.difference(self.__known_files):
                 self.__callback(new_file)
