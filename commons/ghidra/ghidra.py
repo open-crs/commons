@@ -3,66 +3,83 @@ import subprocess
 import typing
 from enum import Enum
 
+import docker
+
+IMAGE_TAG = "ghidra"
+
 COMMENT_PREFIX = "/* WARNING"
 REPORT_START_LINE = "INFO  SCRIPT"
 REPORT_FINISH_LINE = "INFO  ANALYZING"
 
-
-PROJECT_FOLDER = "/tmp/ghidra_projects/"
+GHIDRA_PATH_IN_CONTAINER = "/opt/ghidra/support/analyzeHeadless"
+SCRIPTS_MOUNT_IN_FOLDER = "/scripts"
+BINARY_PATH_IN_CONTAINER = "binary"
 COMMAND_FMT = (
-    "{} " + PROJECT_FOLDER + " {} -import {} -overwrite -postscript {}"
+    f"{GHIDRA_PATH_IN_CONTAINER} /tmp {BINARY_PATH_IN_CONTAINER} -import"
+    f" {BINARY_PATH_IN_CONTAINER} -overwrite -postscript {{}}"
 )
 
 
 class AvailableGhidraScripts(Enum):
-    DECOMPILE_FUNCTION = "scripts/decompile_function.py"
-    EXTRACT_CALLS = "scripts/extract_calls.py"
+    DECOMPILE_FUNCTION = "decompile_function.py"
+    EXTRACT_CALLS = "extract_calls.py"
 
 
 class GhidraAnalysis:
-    __ghidra_headless_path: object
+    __docker_client: docker.client
+    _container: typing.Any
     decompiled_code: str
     calls: typing.Set[str]
 
-    def __init__(self, ghidra_headless_path: str, filename: str) -> None:
-        self.__ghidra_headless_path = ghidra_headless_path
+    def __init__(self, filename: str) -> None:
         self.filename = filename
         self.decompiled_code = ""
         self.calls = set()
 
-        self.__ensure_project_folder()
+        self.__docker_client = docker.from_env()
 
-    def __ensure_project_folder(self) -> None:
-        if not os.path.isdir(PROJECT_FOLDER):
-            os.mkdir(PROJECT_FOLDER)
+        self.__start_container()
+
+    def __start_container(self) -> typing.List[str]:
+        host_scripts_folder = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "scripts"
+        )
+
+        self._container = self.__docker_client.containers.run(
+            IMAGE_TAG,
+            command="tail -f /dev/null",
+            tty=True,
+            auto_remove=True,
+            detach=True,
+            volumes={
+                self.filename: {
+                    "bind": "/" + BINARY_PATH_IN_CONTAINER,
+                    "mode": "rw",
+                },
+                host_scripts_folder: {
+                    "bind": SCRIPTS_MOUNT_IN_FOLDER,
+                    "mode": "rw",
+                },
+            },
+        )
 
     def __run_headless_ghidra(
         self, script: AvailableGhidraScripts, argv: typing.List[str] = None
     ) -> typing.List[str]:
-        analysis_script = os.path.join(os.getcwd(), script.value)
-
+        analysis_script = os.path.join(SCRIPTS_MOUNT_IN_FOLDER, script.value)
         ghidra_command = COMMAND_FMT.format(
-            self.__ghidra_headless_path,
-            self.filename,
-            self.filename,
             analysis_script,
         ).split(" ")
         if argv:
             ghidra_command.extend(argv)
 
-        try:
-            process = subprocess.run(
-                ghidra_command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=True,
-            )
+        _, output = self._container.exec_run(
+            ghidra_command,
+            workdir="/",
+        )
+        raw_output = output.decode("utf-8").splitlines()
 
-            raw_output = process.stdout.decode("utf-8").splitlines()
-
-            return list(self.__extract_script_result(raw_output))
-        except subprocess.CalledProcessError:
-            return None
+        return list(self.__extract_script_result(raw_output))
 
     def __extract_script_result(
         self, raw_output: typing.List[str]
@@ -73,10 +90,10 @@ class GhidraAnalysis:
                 is_script_output = True
                 continue
 
-            if line.startswith(REPORT_FINISH_LINE):
-                break
-
             if is_script_output:
+                if line.startswith(REPORT_FINISH_LINE):
+                    break
+
                 yield line
 
     def __preprocess_call(
@@ -90,13 +107,15 @@ class GhidraAnalysis:
             else:
                 yield call
 
-    def __process_decompiled_code(self, lines: typing.List[str]) -> None:
+    def __process_decompiled_code(self, lines: typing.List[str]) -> str:
         code = "\n".join(lines)
 
         code = self.__replace_undefs(code)
         code = self.__replace_longs(code)
         code = self.__replace_double_lines(code)
         code = self.__replace_comments_for_pycparser(code)
+
+        return code
 
     def __replace_undefs(self, code: str) -> None:
         return code.replace("undefined4", "int").replace("undefined", "char")

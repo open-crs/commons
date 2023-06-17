@@ -19,6 +19,7 @@ class InputStreams(Enum):
         "standard input",
         [
             "read",
+            "gets",
             "pread",
             "fread",
             "fgets",

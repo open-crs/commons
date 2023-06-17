@@ -1,0 +1,3 @@
+[submodule "commons/ghidra/docker"]
+	path = commons/ghidra/docker
+	url = https://github.com/fkie-cad/docker_ghidra_headless_base

@@ -11,7 +11,7 @@ from ghidra.util.task import ConsoleTaskMonitor
 
 
 def main():
-    function_name = getScriptArgs()
+    function_name = getScriptArgs()[0]
     if not function_name:
         exit(1)
 
