@@ -4,10 +4,9 @@ import logging
 import typing
 from enum import Enum, auto
 
-from commons.mitigations import Mitigations
 from pwn import ELF
 
-SENSITIVE_STRINGS = ["win", "secret", "shell", "system", "flag"]
+from commons.mitigations import Mitigations
 
 
 class ContextAspects(Enum):
@@ -32,21 +31,3 @@ def __get_members_from_loaded_elf(
             logging.info("Found set member of binary: %s", member_name)
 
             yield members_enum[member_name]
-
-
-def get_sensitive_functions_names(
-    elf_filename: str,
-) -> typing.Generator[str, None, None]:
-    binary = ELF(elf_filename, checksec=False)
-    funcs = [name for name in binary.symbols.keys() if __is_sensitive(name)]
-
-    for name in funcs:
-        logging.info(
-            "Found sensitive function: %s (%s)", name, hex(binary.symbols[name])
-        )
-
-    yield from funcs
-
-
-def __is_sensitive(function_name: str) -> bool:
-    return any([string in function_name for string in SENSITIVE_STRINGS])
