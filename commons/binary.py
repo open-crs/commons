@@ -6,23 +6,17 @@ from enum import Enum, auto
 
 from pwn import ELF
 
-from commons.mitigations import Mitigations
-
 
 class ContextAspects(Enum):
     EXECSTACK = auto()
     RWX_SEGMENTS = auto()
 
 
-def get_mitigations(binary: ELF) -> typing.List[Mitigations]:
-    yield from __get_members_from_loaded_elf(binary, Mitigations)
-
-
 def get_context_aspects(binary: ELF) -> typing.List[ContextAspects]:
-    yield from __get_members_from_loaded_elf(binary, ContextAspects)
+    yield from _get_members_from_loaded_elf(binary, ContextAspects)
 
 
-def __get_members_from_loaded_elf(
+def _get_members_from_loaded_elf(
     binary: ELF, members_enum: Enum
 ) -> typing.Generator[Enum, None, None]:
     for member in members_enum:
