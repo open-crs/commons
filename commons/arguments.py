@@ -1,6 +1,8 @@
 import typing
 from enum import Enum
 
+ARGUMENTS_PATTERN = r"\s-{1,2}[a-zA-Z0-9][a-zA-Z0-9_-]*"
+
 
 class ArgumentRole(Enum):
     FLAG = 0
@@ -29,3 +31,9 @@ class ArgumentsPair:
             return self.first
         else:
             return f"{self.first} {self.second}"
+
+    def to_hex_id(self) -> str:
+        if not self.first:
+            return "none"
+
+        return self.to_str().encode("utf-8").hex().upper()
