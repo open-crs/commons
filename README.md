@@ -4,19 +4,61 @@
 
 `commons` is a Python 3 library containing useful implementations for all CRS modules:
 
-- Utility functions and classes;
-- Interfaces; and
-- Enumerations.
+- utility functions and classes
+- interfaces
+- enumerations
 
-The enumerations are not exhaustive. They define the minimal set of members that are used in OpenCRS. For example, `InputStreams` doesn't define an `ENVIRONMENT_VARIABLE` (a valid input stream for an executable) as this case is not tacked yet by the project.
+The enumerations are not exhaustive.
+They define the minimal set of members that are used in OpenCRS.
+For example, `InputStreams` doesn't define an `ENVIRONMENT_VARIABLE` (a valid input stream for an executable) as this case is not tacked yet by the project.
 
 ## Setup
 
-Install the required Python 3 packages via `poetry install --no-dev`.
+1. Make sure you have set up the repositories and Python environment according to the [top-level instructions](https://github.com/open-crs#requirements).
+   That is:
 
-## Usage
+   - Docker is installed and is properly running.
+     Check using:
 
-1. Install the required Python 3 packages via `poetry install --no-dev`.
-2. If the `ghidra` or `qbdi` modules will be used, ensure you have Docker installed.
-3. If the `ghidra` will be used, build the Docker image: `docker build --tag ghidra -f commons/ghidra/docker/Dockerfile commons/ghidra/docker`
-4. If the `qbdi` will be used, build the Docker image: `docker build --tag qbdi_args_fuzzing -f commons/qbdi/Dockerfile.qbdi_docker commons/qbdi`
+     ```console
+     docker version
+     docker ps -a
+     docker run --rm hello-world
+     ```
+
+     These commands should run without errors.
+
+   - The current repository and the [`commons` repository](https://github.com/open-crs/commons) are cloned (with submodules) in the same directory.
+
+   - You are running all commands inside a Python virtual environment.
+     There should be `(.venv)` prefix to your prompt.
+
+   - You have installed Poetry in the virtual environment.
+     If you run:
+
+     ```console
+     which poetry
+     ```
+
+     you should get a path ending with `.venv/bin/poetry`.
+
+1. Disable the Python Keyring:
+
+   ```console
+   export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
+   ```
+
+   This is a problem that may occur in certain situations, preventing Poetry from getting packages.
+
+1. Install the required packages with Poetry (based on `pyprojects.toml`):
+
+   ```console
+   poetry install --only main
+   ```
+
+1. Build the [Ghidra](https://ghidra-sre.org/) and [QBDI](https://github.com/QBDI/QBDI) Docker images used by other modules:
+
+   ```console
+   docker build --tag ghidra -f commons/ghidra/docker/Dockerfile commons/ghidra/docker
+   docker build --platform linux/386 --tag qbdi_args_fuzzing -f commons/qbdi/docker/Dockerfile commons/qbdi/docker
+   ```
