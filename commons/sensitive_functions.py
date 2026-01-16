@@ -2,6 +2,8 @@
 
 import logging
 import typing
+import re
+
 from dataclasses import dataclass
 
 from pwn import ELF
@@ -32,4 +34,7 @@ def get_sensitive_functions_names(
 
 
 def __is_sensitive(function_name: str) -> bool:
-    return any([string in function_name for string in SENSITIVE_STRINGS])
+    return any(
+        re.search(rf"(^|_){kw}($|_)", function_name)
+        for kw in SENSITIVE_STRINGS
+    )
