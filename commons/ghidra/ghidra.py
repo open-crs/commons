@@ -118,10 +118,22 @@ class GhidraAnalysis:
         return code
 
     def __replace_undefs(self, code: str) -> None:
-        return code.replace("undefined4", "int").replace("undefined", "char")
+        return (
+            code.replace("undefined8", "long long")
+                .replace("undefined4", "int")
+                .replace("undefined2", "short")
+                .replace("undefined1", "char")
+                .replace("undefined", "char")
+        )
 
     def __replace_longs(self, code: str) -> None:
-        return code.replace("char8", "long")
+        return (
+            code.replace("char8", "long")
+                .replace("ulong", "unsigned long")
+                .replace("uint", "unsigned int")
+                .replace("ushort", "unsigned short")
+                .replace("bool", "int")
+        )
 
     def __replace_double_lines(self, code: str) -> None:
         return code.replace("\n\n", "\n")
