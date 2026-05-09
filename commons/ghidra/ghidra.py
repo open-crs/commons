@@ -32,7 +32,7 @@ class GhidraAnalysis:
     calls: typing.Set[str]
 
     def __init__(self, filename: str) -> None:
-        self.filename = filename
+        self.filename = os.path.abspath(filename)
         self.decompiled_code = ""
         self.calls = set()
 
