@@ -2,6 +2,7 @@ import os
 import subprocess
 import typing
 from enum import Enum
+import re
 
 import docker
 
@@ -112,6 +113,7 @@ class GhidraAnalysis:
 
         code = self.__replace_undefs(code)
         code = self.__replace_longs(code)
+        code = self.__replace_ghidra_artifacts(code)
         code = self.__replace_double_lines(code)
         code = self.__replace_comments_for_pycparser(code)
 
@@ -135,17 +137,21 @@ class GhidraAnalysis:
                 .replace("bool", "int")
         )
 
+    def __replace_ghidra_artifacts(self, code: str) -> str:
+        # Remove Ghidra specific keywords and formatting that break pycparser
+        code = code.replace("processEntry", "")
+        code = re.sub(r'PTR_FUN_[0-9a-f]+', '0', code)
+        code = re.sub(r'FUN_[0-9a-f]+', '0', code)
+        code = re.sub(r'&stack0x[0-9a-f]+', '0', code)
+        return code
+
     def __replace_double_lines(self, code: str) -> None:
         return code.replace("\n\n", "\n")
 
-    def __replace_comments_for_pycparser(self, code: str) -> None:
-        # pycparser won't be able to parse lines with comments.
-        no_comments_code = []
-        for line in code.splitlines():
-            if COMMENT_PREFIX not in line:
-                no_comments_code.append(line)
-
-        return "\n".join(no_comments_code)
+    def __replace_comments_for_pycparser(self, code: str) -> str:
+        # Remove all /* ... */ blocks
+        code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
+        return "\n".join([line for line in code.splitlines() if line.strip()])
 
     def decompile_function(self, function_name: str) -> str:
         analysis_report = self.__run_headless_ghidra(
