@@ -131,16 +131,43 @@ class GhidraAnalysis:
     def __replace_longs(self, code: str) -> None:
         return (
             code.replace("char8", "long")
-                .replace("ulong", "unsigned long")
-                .replace("uint", "unsigned int")
+                # stdint.h exact-width types — before bare uint/int prefixes
+                .replace("uint64_t", "unsigned long long")
+                .replace("uint32_t", "unsigned int")
+                .replace("uint16_t", "unsigned short")
+                .replace("uint8_t",  "unsigned char")
+                .replace("int64_t",  "long long")
+                .replace("int32_t",  "int")
+                .replace("int16_t",  "short")
+                .replace("int8_t",   "char")
+                # POSIX __ variants — before their public counterparts
+                .replace("__pid_t",   "int")
+                .replace("__ssize_t", "long")
+                .replace("__off_t",   "long")
+                .replace("__time_t",  "long")
+                # POSIX public types — after their __ counterparts
+                .replace("ssize_t",   "long")
+                .replace("pid_t",     "int")
+                .replace("off_t",     "long")
+                .replace("uid_t",     "unsigned int")
+                .replace("gid_t",     "unsigned int")
+                .replace("mode_t",    "unsigned int")
+                .replace("time_t",    "long")
+                .replace("socklen_t", "unsigned int")
+                # Ghidra short aliases — after their longer forms above
+                .replace("ulong",  "unsigned long")
+                .replace("uint",   "unsigned int")
                 .replace("ushort", "unsigned short")
-                .replace("bool", "int")
+                .replace("bool",   "int")
+                # size_t after ssize_t (ssize_t ends with size_t)
+                .replace("size_t", "unsigned int")
+                .replace("FILE",   "int")
         )
 
     def __replace_ghidra_artifacts(self, code: str) -> str:
         # Remove Ghidra specific keywords and formatting that break pycparser
         code = code.replace("processEntry", "")
-        code = re.sub(r'PTR_FUN_[0-9a-f]+', '0', code)
+        code = re.sub(r'PTR_\w+', '0', code)
         code = re.sub(r'FUN_[0-9a-f]+', '0', code)
         code = re.sub(r'&stack0x[0-9a-f]+', '0', code)
         return code
