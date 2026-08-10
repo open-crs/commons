@@ -29,25 +29,37 @@ class FolderWatcher:
         self.__stop_needed = False
         self.__known_files = []
 
-        self.__thread = Thread(target=self.__watch)
+        self.__thread = Thread(target=self.__watch, daemon=True)
         self.__thread.start()
 
     def __del__(self) -> None:
-        self.stop()
+        try:
+            self.stop()
+        except Exception:
+            pass
 
     def __watch(self) -> None:
         while not self.__stop_needed:
-            files = set(os.listdir(self.__folder))
+            try:
+                files = set(os.listdir(self.__folder))
+            except (FileNotFoundError, OSError):
+                files = set()
             files = files.difference(set(self.__ignored_files))
 
-            for new_file in files.difference(self.__known_files):
-                self.__callback(new_file)
+            new_files = files.difference(set(self.__known_files))
+            for new_file in new_files:
+                try:
+                    self.__callback(new_file)
+                except Exception:
+                    pass
 
-            self.__known_files = files
+            self.__known_files = list(files)
 
             time.sleep(self.__pooling_interval)
 
     def stop(self) -> None:
         self.__stop_needed = True
-
-        time.sleep(self.__pooling_interval)
+        try:
+            time.sleep(self.__pooling_interval)
+        except KeyboardInterrupt:
+            pass
