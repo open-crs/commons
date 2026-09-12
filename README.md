@@ -33,27 +33,20 @@ For example, `InputStreams` doesn't define an `ENVIRONMENT_VARIABLE` (a valid in
    - You are running all commands inside a Python virtual environment.
      There should be `(.venv)` prefix to your prompt.
 
-   - You have installed Poetry in the virtual environment.
+   - You have installed uv on your system.
      If you run:
 
      ```console
-     which poetry
+     which uv
      ```
 
-     you should get a path ending with `.venv/bin/poetry`.
+     you should get a path ending with `.local/bin/uv`.
 
-1. Disable the Python Keyring:
 
-   ```console
-   export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
-   ```
-
-   This is a problem that may occur in certain situations, preventing Poetry from getting packages.
-
-1. Install the required packages with Poetry (based on `pyprojects.toml`):
+1. Install the required packages with uv (based on `pyproject.toml`):
 
    ```console
-   poetry install --only main
+   uv sync --no-dev
    ```
 
 1. Build the [Ghidra](https://ghidra-sre.org/) and [QBDI](https://github.com/QBDI/QBDI) Docker images used by other modules:
