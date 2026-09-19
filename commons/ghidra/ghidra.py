@@ -119,7 +119,7 @@ class GhidraAnalysis:
 
         return code
 
-    def __replace_undefs(self, code: str) -> None:
+    def __replace_undefs(self, code: str) -> str:
         return (
             code.replace("undefined8", "long long")
                 .replace("undefined4", "int")
@@ -128,7 +128,7 @@ class GhidraAnalysis:
                 .replace("undefined", "char")
         )
 
-    def __replace_longs(self, code: str) -> None:
+    def __replace_longs(self, code: str) -> str:
         return (
             code.replace("char8", "long")
                 # stdint.h exact-width types — before bare uint/int prefixes
@@ -172,7 +172,7 @@ class GhidraAnalysis:
         code = re.sub(r'&stack0x[0-9a-f]+', '0', code)
         return code
 
-    def __replace_double_lines(self, code: str) -> None:
+    def __replace_double_lines(self, code: str) -> str:
         return code.replace("\n\n", "\n")
 
     def __replace_comments_for_pycparser(self, code: str) -> str:
