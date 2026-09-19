@@ -35,12 +35,11 @@ def main():
                 function = getFunctionAt(symbol.getAddress())
                 if function: break
         
-        # Try 3: Force get function at the primary entry point address
+        # Try 3: Pick the first function known to the function manager (if any)
         if not function:
-            entry_points = program.getSymbolTable().getExternalSymbols("entry")
-            # If still nothing, pick the absolute first function in the manager
-            if not function:
-                function = program.getFunctionManager().getFunctions(True).next()
+            functions_iter = program.getFunctionManager().getFunctions(True)
+            if functions_iter.hasNext():
+                function = functions_iter.next()
 
     if not function:
         print("ERROR: No functions identified in the binary.")
