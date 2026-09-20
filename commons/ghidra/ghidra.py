@@ -2,6 +2,7 @@ import os
 import subprocess
 import typing
 from enum import Enum
+import re
 
 import docker
 
@@ -32,7 +33,7 @@ class GhidraAnalysis:
     calls: typing.Set[str]
 
     def __init__(self, filename: str) -> None:
-        self.filename = filename
+        self.filename = os.path.abspath(filename)
         self.decompiled_code = ""
         self.calls = set()
 
@@ -112,28 +113,72 @@ class GhidraAnalysis:
 
         code = self.__replace_undefs(code)
         code = self.__replace_longs(code)
+        code = self.__replace_ghidra_artifacts(code)
         code = self.__replace_double_lines(code)
         code = self.__replace_comments_for_pycparser(code)
 
         return code
 
-    def __replace_undefs(self, code: str) -> None:
-        return code.replace("undefined4", "int").replace("undefined", "char")
+    def __replace_undefs(self, code: str) -> str:
+        return (
+            code.replace("undefined8", "long long")
+                .replace("undefined4", "int")
+                .replace("undefined2", "short")
+                .replace("undefined1", "char")
+                .replace("undefined", "char")
+        )
 
-    def __replace_longs(self, code: str) -> None:
-        return code.replace("char8", "long")
+    def __replace_longs(self, code: str) -> str:
+        return (
+            code.replace("char8", "long")
+                # stdint.h exact-width types — before bare uint/int prefixes
+                .replace("uint64_t", "unsigned long long")
+                .replace("uint32_t", "unsigned int")
+                .replace("uint16_t", "unsigned short")
+                .replace("uint8_t",  "unsigned char")
+                .replace("int64_t",  "long long")
+                .replace("int32_t",  "int")
+                .replace("int16_t",  "short")
+                .replace("int8_t",   "char")
+                # POSIX __ variants — before their public counterparts
+                .replace("__pid_t",   "int")
+                .replace("__ssize_t", "long")
+                .replace("__off_t",   "long")
+                .replace("__time_t",  "long")
+                # POSIX public types — after their __ counterparts
+                .replace("ssize_t",   "long")
+                .replace("pid_t",     "int")
+                .replace("off_t",     "long")
+                .replace("uid_t",     "unsigned int")
+                .replace("gid_t",     "unsigned int")
+                .replace("mode_t",    "unsigned int")
+                .replace("time_t",    "long")
+                .replace("socklen_t", "unsigned int")
+                # Ghidra short aliases — after their longer forms above
+                .replace("ulong",  "unsigned long")
+                .replace("uint",   "unsigned int")
+                .replace("ushort", "unsigned short")
+                .replace("bool",   "int")
+                # size_t after ssize_t (ssize_t ends with size_t)
+                .replace("size_t", "unsigned int")
+                .replace("FILE",   "int")
+        )
 
-    def __replace_double_lines(self, code: str) -> None:
+    def __replace_ghidra_artifacts(self, code: str) -> str:
+        # Remove/normalize Ghidra-specific identifiers/expressions that can break pycparser.
+        code = re.sub(r"\bprocessEntry\b", "", code)
+        code = re.sub(r"\bPTR_\w+\b", "PTR_STUB", code)
+        code = re.sub(r"\bFUN_[0-9a-fA-F]+\b", "FUN_STUB", code)
+        code = re.sub(r"&\s*stack0x[0-9a-fA-F]+", "0", code)
+        return code
+
+    def __replace_double_lines(self, code: str) -> str:
         return code.replace("\n\n", "\n")
 
-    def __replace_comments_for_pycparser(self, code: str) -> None:
-        # pycparser won't be able to parse lines with comments.
-        no_comments_code = []
-        for line in code.splitlines():
-            if COMMENT_PREFIX not in line:
-                no_comments_code.append(line)
-
-        return "\n".join(no_comments_code)
+    def __replace_comments_for_pycparser(self, code: str) -> str:
+        # Remove all /* ... */ blocks
+        code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
+        return "\n".join([line for line in code.splitlines() if line.strip()])
 
     def decompile_function(self, function_name: str) -> str:
         analysis_report = self.__run_headless_ghidra(
