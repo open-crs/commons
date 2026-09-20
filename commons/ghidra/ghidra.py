@@ -165,11 +165,11 @@ class GhidraAnalysis:
         )
 
     def __replace_ghidra_artifacts(self, code: str) -> str:
-        # Remove Ghidra specific keywords and formatting that break pycparser
-        code = code.replace("processEntry", "")
-        code = re.sub(r'PTR_\w+', '0', code)
-        code = re.sub(r'FUN_[0-9a-f]+', '0', code)
-        code = re.sub(r'&stack0x[0-9a-f]+', '0', code)
+        # Remove/normalize Ghidra-specific identifiers/expressions that can break pycparser.
+        code = re.sub(r"\bprocessEntry\b", "", code)
+        code = re.sub(r"\bPTR_\w+\b", "PTR_STUB", code)
+        code = re.sub(r"\bFUN_[0-9a-fA-F]+\b", "FUN_STUB", code)
+        code = re.sub(r"&\s*stack0x[0-9a-fA-F]+", "0", code)
         return code
 
     def __replace_double_lines(self, code: str) -> str:
