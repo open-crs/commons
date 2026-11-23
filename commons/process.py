@@ -7,6 +7,8 @@ import typing
 from dataclasses import dataclass
 
 import pwn
+from commons.arch import Architecture
+from commons.elf_utils import detect_binary_arch
 from commons.exceptions import CommonException
 from commons.input_streams import InputStreams
 
@@ -18,6 +20,7 @@ class Process:
     path: str = None
     process: pwn.process = None
     pid: int = None
+    architecture: typing.Optional[Architecture] = None
     input_stream: InputStreams = None
     sent_input: ProcessInput = None
     output: bytes = None
@@ -27,8 +30,17 @@ def create_process(
     path: str,
     input_stream: InputStreams,
     sent_input: ProcessInput,
+    architecture: typing.Optional[Architecture] = None,
 ) -> Process:
-    process = Process(path=path, input_stream=input_stream, sent_input=sent_input)
+    if architecture is None and path and os.path.isfile(path):
+        architecture = detect_binary_arch(path)
+
+    process = Process(
+        path=path,
+        architecture=architecture,
+        input_stream=input_stream,
+        sent_input=sent_input,
+    )
 
     return process
 

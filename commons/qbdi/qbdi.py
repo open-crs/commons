@@ -6,9 +6,15 @@ import typing
 import docker
 from docker.models.containers import ExecResult
 
+from commons.arch import Architecture
 from commons.arguments import ArgumentsPair
+from commons.elf_utils import detect_binary_arch
 
-IMAGE_TAG = "qbdi_args_fuzzing"
+_IMAGE_TAGS = {
+    Architecture.X86: "qbdi_args_fuzzing",
+    Architecture.X86_64: "qbdi_args_fuzzing_x86_64",
+}
+
 HOST_FOLDER = "/tmp/qbdi/"
 HOST_DICTIONARIES_FOLDER = HOST_FOLDER + "dictionaries/"
 HOST_EXECUTABLE_FOLDER = HOST_FOLDER + "target/"
@@ -56,16 +62,24 @@ class QBDIAnalysis:
     __container: docker.api.container
     executable_filename: str
     timeout: int
+    architecture: Architecture
 
     def __init__(self, executable_filename: str, timeout: int) -> None:
         self.executable_filename = executable_filename
         self.timeout = timeout
+        self.architecture = detect_binary_arch(executable_filename)
+
+        if self.architecture not in _IMAGE_TAGS:
+            raise ValueError(
+                f"Unsupported QBDI architecture: {self.architecture.value}"
+            )
 
         self.__docker_client = docker.from_env()
         self.__create_container()
 
     def __del__(self) -> None:
-        self.__container.remove(force=True)
+        if self.__container is not None:
+            self.__container.remove(force=True)
 
     def __touch_nested_folder(self, folder_name: str) -> None:
         try:
@@ -85,7 +99,7 @@ class QBDIAnalysis:
         self.__create_temporary_folder_structure()
 
         self.__container = self.__docker_client.containers.run(
-            IMAGE_TAG,
+            _IMAGE_TAGS[self.architecture],
             command="tail -f /dev/null",
             detach=True,
             tty=True,
