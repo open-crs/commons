@@ -61,4 +61,5 @@ For example, `InputStreams` doesn't define an `ENVIRONMENT_VARIABLE` (a valid in
    ```console
    docker build --tag ghidra -f commons/ghidra/docker/Dockerfile commons/ghidra/docker
    docker build --platform linux/386 --tag qbdi_args_fuzzing -f commons/qbdi/docker/Dockerfile commons/qbdi/docker
+   docker build --platform linux/amd64 --tag qbdi_args_fuzzing_x86_64 -f commons/qbdi/docker/Dockerfile.x86_64 commons/qbdi/docker
    ```
